@@ -1,0 +1,17 @@
+{
+    "extends": ["react-app"],
+    "plugins": ["import", "jsx-a11y", "prettier", "react", "react-hooks"],
+    "rules": {
+        "no-unused-vars": [
+            "warn",
+            {
+                "vars": "all",
+                "args": "after-used",
+                "ignoreRestSiblings": false
+            }
+        ],
+        "prettier/prettier": "warn",
+        "@typescript-eslint/no-unused-expressions": "warn",
+        "no-empty-pattern": "off"
+    }
+}
