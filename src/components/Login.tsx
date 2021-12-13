@@ -4,10 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import { useForm } from 'react-hook-form';
 
-
-
-
-
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -16,16 +12,17 @@ function Login() {
     const { register, handleSubmit } = useForm();
 
     const login = () => {
-    
-            signInWithEmailAndPassword(auth, email, password).then(userCredentials => {
+        signInWithEmailAndPassword(auth, email, password)
+            .then(userCredentials => {
                 console.log(userCredentials);
-            }).then(() => {
+            })
+            .then(() => {
                 navigate('/');
-            }).catch(() => {
-                window.alert("Unsuccessful login");
+            })
+            .catch(() => {
+                window.alert('Unsuccessful login');
             });
     };
-
 
     return (
         <div>
@@ -42,7 +39,9 @@ function Login() {
                     type="password"
                     placeholder="password"
                 />
-                <Button type="submit" variant="outlined" value="login" onClick={login}>login</Button>
+                <Button type="submit" variant="outlined" value="login" onClick={login}>
+                    login
+                </Button>
             </form>
             <div className="welcome">XO</div>
             <p className="login-msg"> Please log in to play</p>

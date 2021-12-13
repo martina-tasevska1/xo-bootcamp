@@ -1,0 +1,61 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { getAuth, Unsubscribe } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import Login from './Login';
+import Game from './molecules/Game';
+import { createContext } from 'react';
+import { GameContextConsumer, GameContextProvider } from '../context/game';
+
+export const UserContext = createContext('');
+
+function AuthenticationProvider() {
+    const auth = getAuth();
+    const [loggedIn, setLoggedIn] = useState(false);
+    let unsubAuth: Unsubscribe | null = null;
+    const [userEmail, setUserEmail] = useState('');
+
+    useEffect(() => {
+        unsubAuth = auth.onAuthStateChanged(async user => {
+            if (user) {
+                setLoggedIn(true);
+                setUserEmail(user.email);
+                console.log('UserEmail: ', userEmail);
+            } else {
+                setLoggedIn(false);
+            }
+        });
+        return () => {
+            unsubAuth?.();
+        };
+    }, []);
+    console.log('UserEmail: ', userEmail);
+
+    return (
+        <UserContext.Provider value={userEmail}>
+            <BrowserRouter>
+                {!loggedIn && (
+                    <Routes>
+                        <Route path="/" element={<Login />} />
+                        <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                )}
+                {loggedIn && (
+                    <Routes>
+                        <Route
+                            path="/"
+                            element={
+                                <GameContextProvider>
+                                    <Game />
+                                    <GameContextConsumer />
+                                </GameContextProvider>
+                            }
+                        />
+                        <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                )}
+            </BrowserRouter>
+        </UserContext.Provider>
+    );
+}
+
+export default AuthenticationProvider;

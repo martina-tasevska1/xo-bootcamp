@@ -1,6 +1,6 @@
 import { setDoc, doc, getFirestore, increment } from 'firebase/firestore';
 
-async function addPlayerToGame(userId:string , gameId:string){
+async function addPlayerToGame(userId: string, gameId: string) {
     const db = getFirestore();
     await setDoc(
         //adds logged in player to existing active game with 1 player
@@ -14,7 +14,7 @@ async function addPlayerToGame(userId:string , gameId:string){
         },
         { merge: true }
     );
-    console.log("userId in add player to game:", userId)
+    console.log('userId in add player to game:', userId);
 }
 
 export default addPlayerToGame;

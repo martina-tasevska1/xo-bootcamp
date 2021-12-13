@@ -1,9 +1,12 @@
-import { addDoc, collection, doc, getDoc, getFirestore } from 'firebase/firestore';
+import { addDoc, collection, CollectionReference, doc, getDoc, getFirestore, Timestamp } from 'firebase/firestore';
+import { Game } from '../context/game/state';
 
 async function createGame(userId: string) {
     const db = getFirestore();
 
-    const docRef = await addDoc(collection(db, 'boards'), {
+    const collectionReference = collection(db, 'boards')
+
+    const docRef = await addDoc<Game>(collectionReference as CollectionReference<Game>, {
         //creates new game with logged in player
         fields: {
             0: '',
@@ -20,9 +23,9 @@ async function createGame(userId: string) {
             [userId]: 'X',
         },
         totalPlayers: 1,
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
         turn: '',
-    });
+    } as Game);
 
     console.log('docref:', docRef);
 

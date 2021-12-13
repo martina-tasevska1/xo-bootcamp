@@ -1,9 +1,8 @@
-import Field from './Field';
+import Field from '../atoms/Field';
 import {
     getFirestore,
     getDocs,
     doc,
-    setDoc,
     onSnapshot,
     DocumentSnapshot,
     DocumentData,
@@ -11,45 +10,50 @@ import {
     Unsubscribe,
     deleteDoc,
 } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext, useMemo, useCallback } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import createGame from '../utils/createGame';
-import addPlayerToGame from '../utils/addPlayerToGame';
-import { queryExistingGame, queryGamesOpened } from '../utils/queries';
+import createGame from '../createGame';
+import addPlayerToGame from '../addPlayerToGame';
+import { queryExistingGame, queryGamesOpened } from '../../utils/queries';
 import { entries } from 'lodash';
 import Button from '@mui/material/Button';
+import { UserContext } from '../AuthenticationProvider';
+import { Game } from '../../context/game/state';
 
-interface Game {
-    id: string;
-    createdAt: Timestamp;
-    turn: string;
-    fields: {
-        0: string;
-        1: string;
-        2: string;
-        3: string;
-        4: string;
-        5: string;
-        6: string;
-        7: string;
-        8: string;
-    };
-    players: {
-        [id: string]: string;
-    };
-}
+const winningCombinations = [
+    ['0', '1', '2'],
+    ['3', '4', '5'],
+    ['6', '7', '8'],
+    ['0', '3', '6'],
+    ['1', '4', '7'],
+    ['2', '5', '8'],
+    ['0', '4', '8'],
+    ['2', '4', '6'],
+];
 
-function Game() {
+type Move = 'X' | 'O';
+
+const func = (move: Move) => {
+    if (move === 'X') {
+        //...get data
+        return { name: 'Marko' };
+    } else if (move === 'O') {
+        //..get data
+        return { name: 'Martina' };
+    }
+};
+
+function GameComponent() {
     const db = getFirestore();
     const auth = getAuth();
     let navigate = useNavigate();
 
-    const [board, setBoard] = useState<any>(null);
-    const [boardId, setBoardId] = useState("");
+    const [board, setBoard] = useState<Game>(null);
+    const [boardId, setBoardId] = useState('');
 
     let unsubFromCurrentGame: Unsubscribe = null;
-    const [move, setMove] = useState('');
+    const [move, setMove] = useState<Move>(null);
     const [fields, setFields] = useState({
         0: '',
         1: '',
@@ -62,17 +66,8 @@ function Game() {
         8: '',
     });
     const [moves, setMoves] = useState([]);
-
-    const winningCombinations = [
-        ['0', '1', '2'],
-        ['3', '4', '5'],
-        ['6', '7', '8'],
-        ['0', '3', '6'],
-        ['1', '4', '7'],
-        ['2', '5', '8'],
-        ['0', '4', '8'],
-        ['2', '4', '6'],
-    ];
+    const UserEmail = useContext(UserContext);
+    console.log('UserEmail in Game: ', UserEmail);
 
     useEffect(() => {
         let win = checkWin(moves);
@@ -93,15 +88,19 @@ function Game() {
         return false;
     }
 
+    const promenliva = useMemo(() => {
+        return func(move).name;
+    }, [move]);
+
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async user => {
             if (user) {
                 //user is logged in
                 console.log("There's a logged in user", user);
-                const existingGamesSnap = await getDocs(queryExistingGame(user.uid)); //gets existing games with current user
+                const existingGamesSnap = await getDocs<Game>(queryExistingGame(user.uid)); //gets existing games with current user
 
                 if (existingGamesSnap.empty) {
-                    const gamesOpenedSnap = await getDocs(queryGamesOpened()); //gets existing games with 1 player
+                    const gamesOpenedSnap = await getDocs<Game>(queryGamesOpened()); //gets existing games with 1 player
                     if (gamesOpenedSnap.empty) {
                         let newGameDoc = await createGame(user.uid); //creates new game
                         console.log('new game doc', newGameDoc);
@@ -145,8 +144,8 @@ function Game() {
         });
 
         return () => {
-            unsubscribe();
             unsubFromCurrentGame?.();
+            unsubscribe();
         };
     }, []);
 
@@ -166,15 +165,17 @@ function Game() {
         }
     };
 
-    const logout = async () => {
-        await auth.signOut();
-        navigate('/');
-        if (board.id) {
-            await deleteDoc(doc(db, 'boards', board.id));
-        }
-        unsubFromCurrentGame?.();
-    };
-   
+    const logout = useCallback(() => {
+        return async () => {
+            await auth.signOut();
+            navigate('/');
+            if (boardId) {
+                await deleteDoc(doc(db, 'boards', boardId));
+            }
+            unsubFromCurrentGame?.();
+        };
+    }, [auth, boardId, navigate, unsubFromCurrentGame]);
+
     return (
         <div>
             <div className="login">
@@ -183,6 +184,7 @@ function Game() {
                 </Button>
             </div>
             <p className="description">Classic game for two players. O always starts.</p>
+            <div>{promenliva}'s turn.</div>
             <div className="board">
                 {entries(fields).map(([k, v]) => (
                     <Field
@@ -194,11 +196,13 @@ function Game() {
                         move={move}
                         id={`${k}`}
                         value={v}
+                        
                     ></Field>
                 ))}
             </div>
+            <div>Current user: {UserEmail}</div>
         </div>
     );
 }
 
-export default Game;
+export default GameComponent;
