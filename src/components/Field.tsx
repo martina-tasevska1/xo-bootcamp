@@ -4,7 +4,6 @@ import { getAuth } from 'firebase/auth';
 import { useGame } from '../context/game';
 
 interface FieldProps {
-    boardId: string;
     move: string;
     id: string;
     value: string | undefined;
@@ -12,10 +11,10 @@ interface FieldProps {
     setMoves: Function;
 }
 
-const Field: React.FC<FieldProps> = ({ id, value, move, boardId, moves, setMoves }) => {
+const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
     const db = getFirestore();
     const auth = getAuth();
-    const { game, set_game } = useGame();
+    const { game, gameId } = useGame();
 
     const makeMove = async () => {
         if (auth.currentUser) {
@@ -35,7 +34,7 @@ const Field: React.FC<FieldProps> = ({ id, value, move, boardId, moves, setMoves
                         }
                     }
                     await setDoc(
-                        doc(db, 'boards', boardId),
+                        doc(db, 'boards', gameId),
                         {
                             fields: {
                                 [id]: move,

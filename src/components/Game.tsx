@@ -18,7 +18,7 @@ import { queryExistingGame, queryGamesOpened } from '../utils/queries';
 import { entries } from 'lodash';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
-import { UserContext } from './AuthenticationProvider';
+
 import { Game } from '../context/game/state';
 import { useGame } from '../context/game';
 
@@ -41,8 +41,7 @@ function GameComponent() {
     const auth = getAuth();
     let navigate = useNavigate();
 
-    const [boardId, setBoardId] = useState('');
-    const { set_game } = useGame();
+    const { set_game, set_game_id, gameId } = useGame();
 
     let unsubFromCurrentGame: Unsubscribe = null;
     const [move, setMove] = useState<Move>(null);
@@ -58,8 +57,6 @@ function GameComponent() {
         8: '',
     });
     const [moves, setMoves] = useState([]);
-    const UserEmail = useContext(UserContext);
-    console.log('UserEmail in Game: ', UserEmail);
 
     useEffect(() => {
         let win = checkWin(moves);
@@ -93,11 +90,9 @@ function GameComponent() {
                         let newGameDoc = await createGame(user.uid); //creates new game
                         console.log('new game doc', newGameDoc);
                         listenToCurrentGame(user.uid, newGameDoc.id);
-
-                        // setBoard(newGameDoc);
                         set_game(newGameDoc);
-
-                        setBoardId(newGameDoc.id);
+                        // setBoardId(newGameDoc.id);
+                        set_game_id(newGameDoc.id);
                         setMove('X');
                         console.log('docid:', newGameDoc);
                         window.alert('Waiting for a second player. You are X');
@@ -109,7 +104,8 @@ function GameComponent() {
                             ...gamesOpenedSnap.docs[0].data(),
                             id: gamesOpenedSnap.docs[0].id,
                         })
-                        setBoardId(gamesOpenedSnap.docs[0].id);
+                        // setBoardId(gamesOpenedSnap.docs[0].id);
+                        set_game_id(gamesOpenedSnap.docs[0].id);
                         setMove('O');
                         console.log('move in useEffect for O:', move);
                         console.log('docid:', gamesOpenedSnap.docs[0].id);
@@ -125,7 +121,8 @@ function GameComponent() {
                         ...existingGamesSnap.docs[0].data(),
                         id: existingGamesSnap.docs[0].id,
                     })
-                    setBoardId(existingGamesSnap.docs[0].id);
+                    // setBoardId(existingGamesSnap.docs[0].id);
+                    set_game_id(existingGamesSnap.docs[0].id);
                     console.log('existing', existingGamesSnap);
                 }
             } else {
@@ -158,12 +155,11 @@ function GameComponent() {
     const logout = async () => {
         await auth.signOut();
         navigate('/');
-        if (boardId) {
-            await deleteDoc(doc(db, 'boards', boardId));
+        if (gameId) {
+            await deleteDoc(doc(db, 'boards', gameId));
         }
         unsubFromCurrentGame?.();
     };
-
 
     return (
         <Box>
@@ -173,14 +169,12 @@ function GameComponent() {
                 </Button>
             </Box>
             <Box sx={{ fontSize: '30px', marginTop: '50px', textAlign: 'center', fontFamily: 'Indie Flower, cursive'}}>Classic game for two players. O always starts.</Box>
-            {/* <div>{promenliva}'s turn.</div> */}
             <Box sx={{ width: '306px', margin: '0 auto', display: 'grid', gridTemplate: 'repeat(3, 100px) / repeat(3, 100px)', gridGap: '3px', backgroundColor: 'rgb(87, 110, 116)', marginTop: '100px'}}>
                 {entries(fields).map(([k, v]) => (
                     <Field
                         key={k}
                         moves={moves}
                         setMoves={setMoves}
-                        boardId={boardId}
                         move={move}
                         id={`${k}`}
                         value={v}
@@ -188,7 +182,6 @@ function GameComponent() {
                     ></Field>
                 ))}
             </Box>
-            <Box>Current user: {UserEmail}</Box>
         </Box>
     );
 }

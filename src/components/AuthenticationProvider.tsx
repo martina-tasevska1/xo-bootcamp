@@ -3,10 +3,8 @@ import { getAuth, Unsubscribe } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import Login from './Login';
 import Game from './Game';
-import { createContext } from 'react';
 import { GameContextConsumer, GameContextProvider } from '../context/game';
 
-export const UserContext = createContext('');
 
 function AuthenticationProvider() {
     const auth = getAuth();

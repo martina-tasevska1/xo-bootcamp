@@ -22,8 +22,10 @@ export interface Game {
 
 export interface State {
     game: Game;
+    gameId: string;
 }
 
 export const initialState: State = {
     game: null,
+    gameId: "",
 };

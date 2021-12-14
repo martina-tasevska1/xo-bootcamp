@@ -53,8 +53,13 @@ export const useGame = () => {
 
     return {
         game: state.game,
+        gameId: state.gameId,
         set_game: (newGame) => {
             dispatch({ type: ActionType.SET_GAME, payload: {game: newGame} });
+        },
+        set_game_id: (newId) => {
+            dispatch({ type: ActionType.SET_GAME_ID, payload: { gameId: newId }});
         }
     }
 }
+
