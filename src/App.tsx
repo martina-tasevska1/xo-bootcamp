@@ -1,7 +1,15 @@
 import './styles/App.css';
 import AuthenticationProvider from './components/AuthenticationProvider';
-import { initializeApp } from 'firebase/app'
+import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from './config/fbconfig';
+import { createTheme } from '@mui/material';
+import { ThemeProvider } from '@emotion/react';
+
+const theme = createTheme({
+    typography: {
+        fontFamily: 'Indie Flower',
+    },
+});
 
 declare global {
     interface Window {
@@ -12,7 +20,11 @@ declare global {
 
 function App() {
     const app = initializeApp(firebaseConfig);
-    return <AuthenticationProvider />;
+    return(
+    <ThemeProvider theme={theme}>
+        <AuthenticationProvider />
+    </ThemeProvider>
+    )
 }
 
 export default App;

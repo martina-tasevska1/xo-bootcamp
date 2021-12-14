@@ -1,4 +1,4 @@
-import Field from '../atoms/Field';
+import Field from './Field';
 import {
     getFirestore,
     getDocs,
@@ -6,20 +6,22 @@ import {
     onSnapshot,
     DocumentSnapshot,
     DocumentData,
-    Timestamp,
     Unsubscribe,
     deleteDoc,
 } from 'firebase/firestore';
-import { useEffect, useState, useContext, useMemo, useCallback } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import createGame from '../createGame';
-import addPlayerToGame from '../addPlayerToGame';
-import { queryExistingGame, queryGamesOpened } from '../../utils/queries';
+import createGame from '../utils/createGame';
+import addPlayerToGame from '../utils/addPlayerToGame';
+import { queryExistingGame, queryGamesOpened } from '../utils/queries';
 import { entries } from 'lodash';
 import Button from '@mui/material/Button';
-import { UserContext } from '../AuthenticationProvider';
-import { Game } from '../../context/game/state';
+import Box from '@mui/material/Box';
+import { UserContext } from './AuthenticationProvider';
+import { Game } from '../context/game/state';
+import { useGame } from '../context/game';
+
 
 const winningCombinations = [
     ['0', '1', '2'],
@@ -34,23 +36,13 @@ const winningCombinations = [
 
 type Move = 'X' | 'O';
 
-const func = (move: Move) => {
-    if (move === 'X') {
-        //...get data
-        return { name: 'Marko' };
-    } else if (move === 'O') {
-        //..get data
-        return { name: 'Martina' };
-    }
-};
-
 function GameComponent() {
     const db = getFirestore();
     const auth = getAuth();
     let navigate = useNavigate();
 
-    const [board, setBoard] = useState<Game>(null);
     const [boardId, setBoardId] = useState('');
+    const { set_game } = useGame();
 
     let unsubFromCurrentGame: Unsubscribe = null;
     const [move, setMove] = useState<Move>(null);
@@ -88,10 +80,6 @@ function GameComponent() {
         return false;
     }
 
-    const promenliva = useMemo(() => {
-        return func(move).name;
-    }, [move]);
-
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async user => {
             if (user) {
@@ -106,7 +94,9 @@ function GameComponent() {
                         console.log('new game doc', newGameDoc);
                         listenToCurrentGame(user.uid, newGameDoc.id);
 
-                        setBoard(newGameDoc);
+                        // setBoard(newGameDoc);
+                        set_game(newGameDoc);
+
                         setBoardId(newGameDoc.id);
                         setMove('X');
                         console.log('docid:', newGameDoc);
@@ -115,10 +105,10 @@ function GameComponent() {
                         addPlayerToGame(user.uid, gamesOpenedSnap.docs[0].id); //adds player to existing game
                         listenToCurrentGame(user.uid, gamesOpenedSnap.docs[0].id);
                         console.log('games opened snap', gamesOpenedSnap.docs[0].data());
-                        setBoard({
+                        set_game({
                             ...gamesOpenedSnap.docs[0].data(),
                             id: gamesOpenedSnap.docs[0].id,
-                        });
+                        })
                         setBoardId(gamesOpenedSnap.docs[0].id);
                         setMove('O');
                         console.log('move in useEffect for O:', move);
@@ -131,10 +121,10 @@ function GameComponent() {
 
                     console.log('existing  snap', existingGamesSnap.docs[0].data());
 
-                    setBoard({
+                    set_game({
                         ...existingGamesSnap.docs[0].data(),
                         id: existingGamesSnap.docs[0].id,
-                    });
+                    })
                     setBoardId(existingGamesSnap.docs[0].id);
                     console.log('existing', existingGamesSnap);
                 }
@@ -161,37 +151,35 @@ function GameComponent() {
                 console.log('Game in drawBoard:', game);
                 setFields(game.fields);
             }
-            setBoard(game);
+            set_game(game);
         }
     };
 
-    const logout = useCallback(() => {
-        return async () => {
-            await auth.signOut();
-            navigate('/');
-            if (boardId) {
-                await deleteDoc(doc(db, 'boards', boardId));
-            }
-            unsubFromCurrentGame?.();
-        };
-    }, [auth, boardId, navigate, unsubFromCurrentGame]);
+    const logout = async () => {
+        await auth.signOut();
+        navigate('/');
+        if (boardId) {
+            await deleteDoc(doc(db, 'boards', boardId));
+        }
+        unsubFromCurrentGame?.();
+    };
+
 
     return (
-        <div>
-            <div className="login">
-                <Button variant="contained" onClick={logout}>
+        <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'right', backgroundColor: 'rgb(186, 202, 224)', padding: '7px'}}>
+                <Button variant="outlined" onClick={logout}>
                     logout
                 </Button>
-            </div>
-            <p className="description">Classic game for two players. O always starts.</p>
-            <div>{promenliva}'s turn.</div>
-            <div className="board">
+            </Box>
+            <Box sx={{ fontSize: '30px', marginTop: '50px', textAlign: 'center', fontFamily: 'Indie Flower, cursive'}}>Classic game for two players. O always starts.</Box>
+            {/* <div>{promenliva}'s turn.</div> */}
+            <Box sx={{ width: '306px', margin: '0 auto', display: 'grid', gridTemplate: 'repeat(3, 100px) / repeat(3, 100px)', gridGap: '3px', backgroundColor: 'rgb(87, 110, 116)', marginTop: '100px'}}>
                 {entries(fields).map(([k, v]) => (
                     <Field
                         key={k}
                         moves={moves}
                         setMoves={setMoves}
-                        board={board}
                         boardId={boardId}
                         move={move}
                         id={`${k}`}
@@ -199,9 +187,9 @@ function GameComponent() {
                         
                     ></Field>
                 ))}
-            </div>
-            <div>Current user: {UserEmail}</div>
-        </div>
+            </Box>
+            <Box>Current user: {UserEmail}</Box>
+        </Box>
     );
 }
 

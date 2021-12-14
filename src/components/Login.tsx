@@ -1,7 +1,8 @@
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import { Button, Box, TextField, FormControl, FormLabel, FormGroup } from '@mui/material';
+
 import { useForm } from 'react-hook-form';
 
 function Login() {
@@ -25,27 +26,57 @@ function Login() {
     };
 
     return (
-        <div>
-            <form className="login" onSubmit={handleSubmit(login)}>
-                <input
-                    onChange={event => setEmail(event.target.value)}
-                    className="input"
-                    type="text"
-                    placeholder="email"
-                />
-                <input
-                    onChange={event => setPassword(event.target.value)}
-                    className="input"
-                    type="password"
-                    placeholder="password"
-                />
-                <Button type="submit" variant="outlined" value="login" onClick={login}>
+        <Box sx={{}}>
+            <FormGroup
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'flex-end',
+                    gap: '3px',
+                    backgroundColor: 'rgb(186, 202, 224)',
+                    padding: '5px',
+                }}
+                onSubmit={handleSubmit(login)}
+            >
+                <FormLabel>
+                    <TextField
+                        onChange={event => setEmail(event.target.value)}
+                        className="input"
+                        type="text"
+                        placeholder="email"
+                        size="small"
+                    />
+                </FormLabel>
+                <FormLabel>
+                    <TextField
+                        onChange={event => setPassword(event.target.value)}
+                        className="input"
+                        type="password"
+                        placeholder="password"
+                        size="small"
+                    />
+                </FormLabel>
+                <Button type="submit" variant="contained" value="login" onClick={login}>
                     login
                 </Button>
-            </form>
-            <div className="welcome">XO</div>
-            <p className="login-msg"> Please log in to play</p>
-        </div>
+            </FormGroup>
+            <Box
+                sx={{
+                    fontFamily: 'Indie Flower, cursive',
+                    textAlign: 'center',
+                    fontSize: '80px',
+                    marginTop: '50px',
+                }}
+            >
+                XO
+            </Box>
+            <Box
+                sx={{ fontFamily: 'Indie Flower, cursive', textAlign: 'center', fontSize: '20px' }}
+            >
+                {' '}
+                Please log in to play
+            </Box>
+        </Box>
     );
 }
 

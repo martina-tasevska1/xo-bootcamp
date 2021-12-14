@@ -1,11 +1,9 @@
 import { setDoc, getFirestore, doc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import { getAuth } from 'firebase/auth';
-import { useEffect } from 'react';
-import { Game } from '../../context/game/state';
+import { useGame } from '../context/game';
 
 interface FieldProps {
-    board: Game;
     boardId: string;
     move: string;
     id: string;
@@ -14,25 +12,22 @@ interface FieldProps {
     setMoves: Function;
 }
 
-const Field: React.FC<FieldProps> = ({ id, value, move, board, boardId, moves, setMoves }) => {
+const Field: React.FC<FieldProps> = ({ id, value, move, boardId, moves, setMoves }) => {
     const db = getFirestore();
     const auth = getAuth();
-
-    useEffect(() => {
-        console.log('re-rendered board');
-    }, [board]);
+    const { game, set_game } = useGame();
 
     const makeMove = async () => {
         if (auth.currentUser) {
-            console.log('board in makeMove: ', board);
-            console.log('current user: ', auth.currentUser.uid, 'turn: ', board.turn);
+            console.log('board in makeMove: ', game);
+            console.log('current user: ', auth.currentUser.uid, 'turn: ', game.turn);
 
-            if (board.turn == auth.currentUser.uid) {
+            if (game.turn == auth.currentUser.uid) {
                 if (value == '') {
                     console.log('value of field is empty:');
                     let otherPlayerId = '';
-                    console.log('players:', board.players);
-                    for (const playerId of Object.keys(board.players)) {
+                    console.log('players:', game.players);
+                    for (const playerId of Object.keys(game.players)) {
                         console.log('user id:', playerId);
                         if (playerId != auth.currentUser.uid) {
                             otherPlayerId = playerId;
@@ -57,7 +52,9 @@ const Field: React.FC<FieldProps> = ({ id, value, move, board, boardId, moves, s
     };
 
     return (
-        <Box className="field" onClick={makeMove}>
+        <Box onClick={makeMove}
+        sx={{ backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', cursor: 'pointer', fontFamily: 'Indie Flower, cursive'}}
+        >
             {value}
         </Box>
     );

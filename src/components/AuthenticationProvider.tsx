@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { getAuth, Unsubscribe } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import Login from './Login';
-import Game from './molecules/Game';
+import Game from './Game';
 import { createContext } from 'react';
 import { GameContextConsumer, GameContextProvider } from '../context/game';
 
@@ -31,7 +31,6 @@ function AuthenticationProvider() {
     console.log('UserEmail: ', userEmail);
 
     return (
-        <UserContext.Provider value={userEmail}>
             <BrowserRouter>
                 {!loggedIn && (
                     <Routes>
@@ -54,7 +53,6 @@ function AuthenticationProvider() {
                     </Routes>
                 )}
             </BrowserRouter>
-        </UserContext.Provider>
     );
 }
 

@@ -1,4 +1,4 @@
-import { createContext, Dispatch, useEffect, useMemo, useReducer } from 'react';
+import { createContext, Dispatch, useEffect, useMemo, useReducer, useContext } from 'react';
 import { Action, ActionType } from './actions';
 import { reducer } from './reducer';
 import { initialState, State } from './state';
@@ -36,3 +36,25 @@ export const GameContextConsumer = () => {
         </Context.Consumer>
     );
 };
+
+const useState = () => {
+    const { state } = useContext(Context);
+    return state;
+}
+
+const useDispatch = () => {
+    const { dispatch } = useContext(Context);
+    return dispatch;
+}
+
+export const useGame = () => {
+    const state = useState();
+    const dispatch = useDispatch();
+
+    return {
+        game: state.game,
+        set_game: (newGame) => {
+            dispatch({ type: ActionType.SET_GAME, payload: {game: newGame} });
+        }
+    }
+}
