@@ -40,6 +40,9 @@ function GameComponent() {
     let navigate = useNavigate();
 
     const { setGame, setGameId, setMove, move, gameId } = useGame();
+    
+    const [showDiv, setShowDiv] = useState(false);
+    const [divString, setDivString] = useState("")
 
     let unsubFromCurrentGame: Unsubscribe = null;
     const [fields, setFields] = useState({
@@ -59,7 +62,8 @@ function GameComponent() {
         let win = checkWin(moves);
         if (win) {
             console.log(`${move} won!`);
-            window.alert(`${move} won!`);
+            // window.alert(`${move} won!`);
+            displayDiv(`${move} won!`)
         }
         console.log('moves in useEffect:', moves);
     }, [moves]);
@@ -72,6 +76,11 @@ function GameComponent() {
             }
         }
         return false;
+    }
+
+    function displayDiv(divString: string){
+        setShowDiv(true);
+        setDivString(divString);
     }
 
     useEffect(() => {
@@ -89,7 +98,8 @@ function GameComponent() {
                         setGame(newGameDoc);
                         setGameId(newGameDoc.id);
                         setMove('X');
-                        window.alert('Waiting for a second player. You are X');
+                        displayDiv("Waiting for second player.");
+
                     } else {
                         addPlayerToGame(user.uid, gamesOpenedSnap.docs[0].id); //adds player to existing game
                         listenToCurrentGame(user.uid, gamesOpenedSnap.docs[0].id);
@@ -99,7 +109,7 @@ function GameComponent() {
                         })
                         setGameId(gamesOpenedSnap.docs[0].id);
                         setMove('O');
-                        window.alert('Two players active. The game can begin. You are O');
+                        displayDiv("Two players active.");
                     }
                 } else {
                     console.log('This user already has an active game');
@@ -134,7 +144,11 @@ function GameComponent() {
                 setFields(game.fields);
             }
             setGame(game);
+            if(game.totalPlayers == 2){
+                displayDiv("Two players active");
+            }
         }
+        
     };
 
     const logout = async () => {
@@ -144,6 +158,7 @@ function GameComponent() {
             await deleteDoc(doc(db, 'boards', gameId));
         }
         unsubFromCurrentGame?.();
+
     };
 
     return (
@@ -154,6 +169,16 @@ function GameComponent() {
                 </Button>
             </Box>
             <Box sx={{ fontSize: '30px', marginTop: '50px', textAlign: 'center', fontFamily: 'Indie Flower, cursive'}}>Classic game for two players. O always starts.</Box>
+            {
+                showDiv && 
+                    <Box sx={{ textAlign: 'center', paddingTop: '20px', fontFamily: 'Indie FLower, cursive' }}>
+                    { divString }
+                    </Box>
+                
+            }
+            <Box sx={{ textAlign: 'center', fontFamily: 'Indie Flower, cursive' }}>
+                You are {move}
+            </Box>
             <Box sx={{ width: '306px', margin: '0 auto', display: 'grid', gridTemplate: 'repeat(3, 100px) / repeat(3, 100px)', gridGap: '3px', backgroundColor: 'rgb(87, 110, 116)', marginTop: '100px'}}>
                 {entries(fields).map(([k, v]) => (
                     <Field

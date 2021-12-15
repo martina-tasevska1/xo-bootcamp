@@ -18,6 +18,7 @@ export interface Game {
     players: {
         [id: string]: string;
     };
+    totalPlayers: number;
 }
 
 export interface State {
