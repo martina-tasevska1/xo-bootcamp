@@ -51,14 +51,26 @@ export const useGame = () => {
     const state = useState();
     const dispatch = useDispatch();
 
+    // camelCase
+
+    // PascalCase
+
+    // snake_case
+
+    // kebab-case
+
     return {
         game: state.game,
         gameId: state.gameId,
-        set_game: (newGame) => {
+        move: state.move,
+        setGame: (newGame) => {
             dispatch({ type: ActionType.SET_GAME, payload: {game: newGame} });
         },
-        set_game_id: (newId) => {
-            dispatch({ type: ActionType.SET_GAME_ID, payload: { gameId: newId }});
+        setGameId: (newId) => {
+            dispatch({ type: ActionType.SET_GAME_ID, payload: { gameId: newId } });
+        },
+        setMove: (move) => {
+            dispatch({ type: ActionType.SET_MOVE, payload: { move: move } });
         }
     }
 }

@@ -19,6 +19,15 @@ export const reducer = (state: State, action: Action) => {
                 gameId,
             };
         }
+
+        case ActionType.SET_MOVE: {
+            const { move } = action.payload;
+
+            return {
+                ...state,
+                move,
+            }
+        }
         default: {
             throw new Error(`Unhandled type: ${action.type}`);
         }

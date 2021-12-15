@@ -34,17 +34,14 @@ const winningCombinations = [
     ['2', '4', '6'],
 ];
 
-type Move = 'X' | 'O';
-
 function GameComponent() {
     const db = getFirestore();
     const auth = getAuth();
     let navigate = useNavigate();
 
-    const { set_game, set_game_id, gameId } = useGame();
+    const { setGame, setGameId, setMove, move, gameId } = useGame();
 
     let unsubFromCurrentGame: Unsubscribe = null;
-    const [move, setMove] = useState<Move>(null);
     const [fields, setFields] = useState({
         0: '',
         1: '',
@@ -88,41 +85,30 @@ function GameComponent() {
                     const gamesOpenedSnap = await getDocs<Game>(queryGamesOpened()); //gets existing games with 1 player
                     if (gamesOpenedSnap.empty) {
                         let newGameDoc = await createGame(user.uid); //creates new game
-                        console.log('new game doc', newGameDoc);
                         listenToCurrentGame(user.uid, newGameDoc.id);
-                        set_game(newGameDoc);
-                        // setBoardId(newGameDoc.id);
-                        set_game_id(newGameDoc.id);
+                        setGame(newGameDoc);
+                        setGameId(newGameDoc.id);
                         setMove('X');
-                        console.log('docid:', newGameDoc);
                         window.alert('Waiting for a second player. You are X');
                     } else {
                         addPlayerToGame(user.uid, gamesOpenedSnap.docs[0].id); //adds player to existing game
                         listenToCurrentGame(user.uid, gamesOpenedSnap.docs[0].id);
-                        console.log('games opened snap', gamesOpenedSnap.docs[0].data());
-                        set_game({
+                        setGame({
                             ...gamesOpenedSnap.docs[0].data(),
                             id: gamesOpenedSnap.docs[0].id,
                         })
-                        // setBoardId(gamesOpenedSnap.docs[0].id);
-                        set_game_id(gamesOpenedSnap.docs[0].id);
+                        setGameId(gamesOpenedSnap.docs[0].id);
                         setMove('O');
-                        console.log('move in useEffect for O:', move);
-                        console.log('docid:', gamesOpenedSnap.docs[0].id);
                         window.alert('Two players active. The game can begin. You are O');
                     }
                 } else {
                     console.log('This user already has an active game');
                     listenToCurrentGame(user.uid, existingGamesSnap.docs[0].id);
-
-                    console.log('existing  snap', existingGamesSnap.docs[0].data());
-
-                    set_game({
+                    setGame({
                         ...existingGamesSnap.docs[0].data(),
                         id: existingGamesSnap.docs[0].id,
                     })
-                    // setBoardId(existingGamesSnap.docs[0].id);
-                    set_game_id(existingGamesSnap.docs[0].id);
+                    setGameId(existingGamesSnap.docs[0].id);
                     console.log('existing', existingGamesSnap);
                 }
             } else {
@@ -142,13 +128,12 @@ function GameComponent() {
 
     const drawBoard = (snapshot: DocumentSnapshot<DocumentData>) => {
         const game: Game = snapshot.data() as Game;
-        console.log('draw board');
         if (game) {
             if (game.fields) {
                 console.log('Game in drawBoard:', game);
                 setFields(game.fields);
             }
-            set_game(game);
+            setGame(game);
         }
     };
 

@@ -18,16 +18,12 @@ const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
 
     const makeMove = async () => {
         if (auth.currentUser) {
-            console.log('board in makeMove: ', game);
             console.log('current user: ', auth.currentUser.uid, 'turn: ', game.turn);
 
             if (game.turn == auth.currentUser.uid) {
                 if (value == '') {
-                    console.log('value of field is empty:');
                     let otherPlayerId = '';
-                    console.log('players:', game.players);
                     for (const playerId of Object.keys(game.players)) {
-                        console.log('user id:', playerId);
                         if (playerId != auth.currentUser.uid) {
                             otherPlayerId = playerId;
                             console.log('changed turn:', otherPlayerId);
@@ -49,7 +45,6 @@ const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
             }
         }
     };
-
     return (
         <Box onClick={makeMove}
         sx={{ backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', cursor: 'pointer', fontFamily: 'Indie Flower, cursive'}}

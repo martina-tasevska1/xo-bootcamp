@@ -23,9 +23,11 @@ export interface Game {
 export interface State {
     game: Game;
     gameId: string;
+    move: string;
 }
 
 export const initialState: State = {
     game: null,
     gameId: "",
+    move: "",
 };
