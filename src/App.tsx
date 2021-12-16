@@ -2,14 +2,10 @@ import './styles/App.css';
 import AuthenticationProvider from './components/AuthenticationProvider';
 import { initializeApp } from 'firebase/app';
 import { firebaseConfig } from './config/fbconfig';
-import { createTheme } from '@mui/material';
-import { ThemeProvider } from '@emotion/react';
-
-const theme = createTheme({
-    typography: {
-        fontFamily: 'Indie Flower',
-    },
-});
+import { Provider } from 'react-redux';
+import store from './redux/store';
+import { ThemeProvider } from '@mui/material/styles';
+import theme from './theme';
 
 declare global {
     interface Window {
@@ -20,11 +16,13 @@ declare global {
 
 function App() {
     const app = initializeApp(firebaseConfig);
-    return(
-    <ThemeProvider theme={theme}>
-        <AuthenticationProvider />
-    </ThemeProvider>
-    )
+    return (
+        <ThemeProvider theme={theme}>
+            <Provider store={store}>
+                <AuthenticationProvider />
+            </Provider>
+        </ThemeProvider>
+    );
 }
 
 export default App;

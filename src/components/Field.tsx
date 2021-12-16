@@ -1,20 +1,24 @@
 import { setDoc, getFirestore, doc } from 'firebase/firestore';
 import Box from '@mui/material/Box';
 import { getAuth } from 'firebase/auth';
-import { useGame } from '../context/game';
+import { useSelector } from 'react-redux';
+// import { useGame } from '../context/game';
+import { selectGame } from '../redux/gameSlice';
+import { selectGameId } from '../redux/gameIdSlice';
+import { selectMove } from '../redux/moveSlice';
 
 interface FieldProps {
-    move: string;
     id: string;
     value: string | undefined;
     moves: string[];
     setMoves: Function;
 }
 
-const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
+const Field: React.FC<FieldProps> = ({ id, value, moves, setMoves }) => {
     const db = getFirestore();
     const auth = getAuth();
-    const { game, gameId } = useGame();
+    // const { game, gameId } = useGame();
+    const game = useSelector(selectGame);
 
     const makeMove = async () => {
         if (auth.currentUser) {
@@ -30,10 +34,10 @@ const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
                         }
                     }
                     await setDoc(
-                        doc(db, 'boards', gameId),
+                        doc(db, 'boards', game.id),
                         {
                             fields: {
-                                [id]: move,
+                                [id]: game.players[auth.currentUser.uid],
                             },
                             turn: otherPlayerId,
                         },
@@ -46,8 +50,17 @@ const Field: React.FC<FieldProps> = ({ id, value, move, moves, setMoves }) => {
         }
     };
     return (
-        <Box onClick={makeMove}
-        sx={{ backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', cursor: 'pointer', fontFamily: 'Indie Flower, cursive'}}
+        <Box
+            onClick={makeMove}
+            sx={{
+                backgroundColor: '#fff',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontSize: '50px',
+                cursor: 'pointer',
+                fontFamily: 'Indie Flower, cursive',
+            }}
         >
             {value}
         </Box>

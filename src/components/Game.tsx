@@ -9,19 +9,20 @@ import {
     Unsubscribe,
     deleteDoc,
 } from 'firebase/firestore';
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import createGame from '../utils/createGame';
 import addPlayerToGame from '../utils/addPlayerToGame';
 import { queryExistingGame, queryGamesOpened } from '../utils/queries';
-import { entries } from 'lodash';
+import { entries, size } from 'lodash';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
-
 import { Game } from '../context/game/state';
-import { useGame } from '../context/game';
-
+import { selectGame, setGame } from '../redux/gameSlice';
+import store from '../redux/store';
+import { gameConverter } from '../config/converters';
 
 const winningCombinations = [
     ['0', '1', '2'],
@@ -39,12 +40,9 @@ function GameComponent() {
     const auth = getAuth();
     let navigate = useNavigate();
 
-    const { setGame, setGameId, setMove, move, gameId } = useGame();
-    
-    const [showDiv, setShowDiv] = useState(false);
-    const [divString, setDivString] = useState("")
+    // const { setGame, setGameId, setMove, move, gameId } = useGame();
 
-    let unsubFromCurrentGame: Unsubscribe = null;
+    let unsubFromCurrentGame = useRef<Unsubscribe>(null);
     const [fields, setFields] = useState({
         0: '',
         1: '',
@@ -57,15 +55,15 @@ function GameComponent() {
         8: '',
     });
     const [moves, setMoves] = useState([]);
+    const dispatch = useDispatch();
+    const game = useSelector(selectGame);
 
-    useEffect(() => {
-        let win = checkWin(moves);
-        if (win) {
-            console.log(`${move} won!`);
-            // window.alert(`${move} won!`);
-            displayDiv(`${move} won!`)
-        }
-        console.log('moves in useEffect:', moves);
+    const currentUserMove = useMemo(() => {
+        return game?.players[auth.currentUser.uid];
+    }, [game, auth]);
+
+    const won = useMemo(() => {
+        return checkWin(moves);
     }, [moves]);
 
     function checkWin(playerMoves: string[]): boolean {
@@ -78,11 +76,6 @@ function GameComponent() {
         return false;
     }
 
-    function displayDiv(divString: string){
-        setShowDiv(true);
-        setDivString(divString);
-    }
-
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(async user => {
             if (user) {
@@ -90,35 +83,53 @@ function GameComponent() {
                 console.log("There's a logged in user", user);
                 const existingGamesSnap = await getDocs<Game>(queryExistingGame(user.uid)); //gets existing games with current user
 
+                console.log('existing game', existingGamesSnap);
+
                 if (existingGamesSnap.empty) {
                     const gamesOpenedSnap = await getDocs<Game>(queryGamesOpened()); //gets existing games with 1 player
                     if (gamesOpenedSnap.empty) {
                         let newGameDoc = await createGame(user.uid); //creates new game
-                        listenToCurrentGame(user.uid, newGameDoc.id);
-                        setGame(newGameDoc);
-                        setGameId(newGameDoc.id);
-                        setMove('X');
-                        displayDiv("Waiting for second player.");
-
+                        unsubFromCurrentGame.current = listenToCurrentGame(user.uid, newGameDoc.id);
+                        // setGame(newGameDoc);
+                        // setGameId(newGameDoc.id);
+                        // setMove('X');
+                        dispatch(setGame(newGameDoc));
                     } else {
                         addPlayerToGame(user.uid, gamesOpenedSnap.docs[0].id); //adds player to existing game
-                        listenToCurrentGame(user.uid, gamesOpenedSnap.docs[0].id);
-                        setGame({
-                            ...gamesOpenedSnap.docs[0].data(),
-                            id: gamesOpenedSnap.docs[0].id,
-                        })
-                        setGameId(gamesOpenedSnap.docs[0].id);
-                        setMove('O');
-                        displayDiv("Two players active.");
+                        unsubFromCurrentGame.current = listenToCurrentGame(
+                            user.uid,
+                            gamesOpenedSnap.docs[0].id
+                        );
+                        // setGame({
+                        //     ...gamesOpenedSnap.docs[0].data(),
+                        //     id: gamesOpenedSnap.docs[0].id,
+                        // })
+                        // setGameId(gamesOpenedSnap.docs[0].id);
+                        // setMove('O');
+                        dispatch(
+                            setGame({
+                                ...gamesOpenedSnap.docs[0].data(),
+                                id: gamesOpenedSnap.docs[0].id,
+                            })
+                        );
                     }
                 } else {
                     console.log('This user already has an active game');
-                    listenToCurrentGame(user.uid, existingGamesSnap.docs[0].id);
-                    setGame({
-                        ...existingGamesSnap.docs[0].data(),
-                        id: existingGamesSnap.docs[0].id,
-                    })
-                    setGameId(existingGamesSnap.docs[0].id);
+                    unsubFromCurrentGame.current = listenToCurrentGame(
+                        user.uid,
+                        existingGamesSnap.docs[0].id
+                    );
+                    // setGame({
+                    //     ...existingGamesSnap.docs[0].data(),
+                    //     id: existingGamesSnap.docs[0].id,
+                    // })
+                    // setGameId(existingGamesSnap.docs[0].id);
+                    dispatch(
+                        setGame({
+                            ...existingGamesSnap.docs[0].data(),
+                            id: existingGamesSnap.docs[0].id,
+                        })
+                    );
                     console.log('existing', existingGamesSnap);
                 }
             } else {
@@ -127,13 +138,20 @@ function GameComponent() {
         });
 
         return () => {
-            unsubFromCurrentGame?.();
+            unsubFromCurrentGame.current?.();
             unsubscribe();
         };
     }, []);
 
+    const message = useMemo(() => {
+        if (!game) return null;
+        if (won) return 'You won.';
+        if (game?.totalPlayers === 1) return 'Waiting for another player';
+        else return 'Two players active';
+    }, [game, won]);
+
     const listenToCurrentGame = (userId: string, id: string) => {
-        let unsubFromCurrentGame = onSnapshot(doc(db, 'boards', id), drawBoard);
+        return onSnapshot(doc(db, 'boards', id).withConverter(gameConverter), drawBoard);
     };
 
     const drawBoard = (snapshot: DocumentSnapshot<DocumentData>) => {
@@ -143,53 +161,72 @@ function GameComponent() {
                 console.log('Game in drawBoard:', game);
                 setFields(game.fields);
             }
-            setGame(game);
-            if(game.totalPlayers == 2){
-                displayDiv("Two players active");
-            }
+            // setGame(game);
+            store.dispatch(setGame(game));
         }
-        
     };
 
     const logout = async () => {
         await auth.signOut();
         navigate('/');
-        if (gameId) {
-            await deleteDoc(doc(db, 'boards', gameId));
+        if (game.id) {
+            await deleteDoc(doc(db, 'boards', game.id));
         }
-        unsubFromCurrentGame?.();
-
+        unsubFromCurrentGame.current?.();
     };
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'right', backgroundColor: 'rgb(186, 202, 224)', padding: '7px'}}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'right',
+                    backgroundColor: 'rgb(186, 202, 224)',
+                    padding: '7px',
+                }}
+            >
                 <Button variant="outlined" onClick={logout}>
                     logout
                 </Button>
             </Box>
-            <Box sx={{ fontSize: '30px', marginTop: '50px', textAlign: 'center', fontFamily: 'Indie Flower, cursive'}}>Classic game for two players. O always starts.</Box>
-            {
-                showDiv && 
-                    <Box sx={{ textAlign: 'center', paddingTop: '20px', fontFamily: 'Indie FLower, cursive' }}>
-                    { divString }
-                    </Box>
-                
-            }
-            <Box sx={{ textAlign: 'center', fontFamily: 'Indie Flower, cursive' }}>
-                You are {move}
+            <Box
+                sx={{
+                    fontSize: '30px',
+                    marginTop: '50px',
+                    textAlign: 'center',
+                    fontFamily: 'Indie Flower, cursive',
+                }}
+            >
+                Classic game for two players. O always starts.
             </Box>
-            <Box sx={{ width: '306px', margin: '0 auto', display: 'grid', gridTemplate: 'repeat(3, 100px) / repeat(3, 100px)', gridGap: '3px', backgroundColor: 'rgb(87, 110, 116)', marginTop: '100px'}}>
+            <Box
+                sx={{
+                    textAlign: 'center',
+                    paddingTop: '20px',
+                    fontFamily: 'Indie FLower, cursive',
+                }}
+            >
+                {message}
+            </Box>
+            <Box sx={{ textAlign: 'center', fontFamily: 'Indie Flower, cursive' }}>
+                You are {currentUserMove}
+            </Box>
+            <Box sx={{ textAlign: 'center', fontFamily: 'Indie Flower, cursive' }}>
+                It's {game?.players[game?.turn]} turn
+            </Box>
+            <Box
+                sx={{
+                    width: '306px',
+                    margin: '0 auto',
+                    display: 'grid',
+                    gridTemplate: 'repeat(3, 100px) / repeat(3, 100px)',
+                    gridGap: '3px',
+                    backgroundColor: 'rgb(87, 110, 116)',
+                    marginTop: '100px',
+                }}
+            >
                 {entries(fields).map(([k, v]) => (
-                    <Field
-                        key={k}
-                        moves={moves}
-                        setMoves={setMoves}
-                        move={move}
-                        id={`${k}`}
-                        value={v}
-                        
-                    ></Field>
+                    <Field key={k} moves={moves} setMoves={setMoves} id={`${k}`} value={v}></Field>
                 ))}
             </Box>
         </Box>

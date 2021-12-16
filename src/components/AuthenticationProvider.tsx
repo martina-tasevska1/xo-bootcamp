@@ -30,7 +30,7 @@ function AuthenticationProvider() {
 
     return (
             <BrowserRouter>
-                {!loggedIn && (
+            {!loggedIn && (
                     <Routes>
                         <Route path="/" element={<Login />} />
                         <Route path="*" element={<Navigate to="/" />} />
@@ -41,15 +41,13 @@ function AuthenticationProvider() {
                         <Route
                             path="/"
                             element={
-                                <GameContextProvider>
                                     <Game />
-                                    <GameContextConsumer />
-                                </GameContextProvider>
                             }
                         />
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 )}
+                
             </BrowserRouter>
     );
 }
