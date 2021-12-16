@@ -1,8 +1,6 @@
-import { Timestamp } from '@firebase/firestore';
-
 export interface Game {
     id?: string;
-    createdAt: Timestamp;
+    createdAt: Date;
     turn: string;
     fields: {
         0: string;
@@ -29,6 +27,6 @@ export interface State {
 
 export const initialState: State = {
     game: null,
-    gameId: "",
-    move: "",
+    gameId: '',
+    move: '',
 };
